@@ -99,7 +99,7 @@ else
    handles.croppedImage = croppedImg;
    
    % Preprocessing function
-   preprocessedImg = preprocessImage(croppedImg);
+   preprocessedImg = preprocessImageHugh(croppedImg);
    axes(handles.preprocessedAxes);
    imshow(preprocessedImg);
    handles.preprocessedImage = preprocessedImg;
