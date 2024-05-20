@@ -22,7 +22,7 @@ function varargout = Home(varargin)
 
 % Edit the above text to modify the response to help Home
 
-% Last Modified by GUIDE v2.5 19-May-2024 11:13:31
+% Last Modified by GUIDE v2.5 20-May-2024 18:11:27
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -98,8 +98,20 @@ else
    imshow(croppedImg);
    handles.croppedImage = croppedImg;
    
-   % Preprocessing function
-   preprocessedImg = preprocessImageHugh(croppedImg);
+   % Get selected preprocessing function
+   contents = cellstr(get(handles.preprocessingPopup,'String'));
+   selectedPreprocess = contents{get(handles.preprocessingPopup,'Value')};
+   
+   % Check if the plotCheckbox is selected
+   showPlots = get(handles.plotCheckbox, 'Value');
+   
+   % Preprocess the image based on the selected function and showPlots flag
+   if strcmp(selectedPreprocess, 'FFT')
+       preprocessedImg = preprocessImageFFT(croppedImg, showPlots);
+   elseif strcmp(selectedPreprocess, 'Hugh')
+       preprocessedImg = preprocessImageHugh(croppedImg, showPlots);
+   end
+   
    axes(handles.preprocessedAxes);
    imshow(preprocessedImg);
    handles.preprocessedImage = preprocessedImg;
@@ -111,3 +123,38 @@ else
    handles.barcodeData = barcodeData;
    guidata(hObject, handles);
 end
+
+
+% --- Executes on selection change in preprocessingPopup.
+function preprocessingPopup_Callback(hObject, eventdata, handles)
+% hObject    handle to preprocessingPopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns preprocessingPopup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from preprocessingPopup
+
+
+% --- Executes during object creation, after setting all properties.
+function preprocessingPopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to preprocessingPopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% Set the options for the preprocessing functions
+set(hObject, 'String', {'FFT', 'Hugh'});
+
+
+% --- Executes on button press in plotCheckbox.
+function plotCheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to plotCheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of plotCheckbox

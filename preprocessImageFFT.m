@@ -1,4 +1,4 @@
-function preprocessedImg = preprocessImageFFT(img)
+function preprocessedImg = preprocessImageFFT(img, showPlots)
     % Step 1: Convert the image to grayscale
     if size(img, 3) == 3
         img = rgb2gray(img);
@@ -9,15 +9,17 @@ function preprocessedImg = preprocessImageFFT(img)
     imgFFTShifted = fftshift(imgFFT); % Shift zero frequency to center
     magnitudeSpectrum = log(1 + abs(imgFFTShifted));
 
-    % Plot the original image and the magnitude spectrum
-    figure;
-    subplot(2, 2, 1);
-    imshow(img, []);
-    title('Original Image');
+    if showPlots
+        % Plot the original image and the magnitude spectrum
+        figure;
+        subplot(2, 2, 1);
+        imshow(img, []);
+        title('Original Image');
 
-    subplot(2, 2, 2);
-    imshow(magnitudeSpectrum, []);
-    title('Magnitude Spectrum');
+        subplot(2, 2, 2);
+        imshow(magnitudeSpectrum, []);
+        title('Magnitude Spectrum');
+    end
 
     % Step 3: Analyze the magnitude spectrum to find the dominant orientation
     % Sum the magnitude spectrum along rows and columns
@@ -41,22 +43,24 @@ function preprocessedImg = preprocessImageFFT(img)
     fprintf('Detected angle of the barcode: %f degrees\n', detectedAngle);
 
     % Step 4: Rotate the image to make the barcode horizontal
-    rotatedImg = imrotate(img, -detectedAngle, 'bilinear', 'crop');
+    rotatedImg = imrotate(img, -detectedAngle + 90, 'bilinear', 'crop');
     preprocessedImg = rotatedImg;
 
-    % Display the rotated image
-    subplot(2, 2, 3);
-    imshow(rotatedImg, []);
-    title(sprintf('Rotated Image (Angle: %f degrees)', detectedAngle));
+    if showPlots
+        % Display the rotated image
+        subplot(2, 2, 3);
+        imshow(rotatedImg, []);
+        title(sprintf('Rotated Image (Angle: %f degrees)', detectedAngle));
 
-    % Plot the summed spectra
-    subplot(2, 2, 4);
-    hold on;
-    plot(sumHorizontal);
-    plot(sumVertical);
-    title('Summed Magnitude Spectra');
-    xlabel('Frequency Index');
-    ylabel('Summed Magnitude');
-    legend('Horizontal Sum', 'Vertical Sum');
-    hold off;
+        % Plot the summed spectra
+        subplot(2, 2, 4);
+        hold on;
+        plot(sumHorizontal);
+        plot(sumVertical);
+        title('Summed Magnitude Spectra');
+        xlabel('Frequency Index');
+        ylabel('Summed Magnitude');
+        legend('Horizontal Sum', 'Vertical Sum');
+        hold off;
+    end
 end
