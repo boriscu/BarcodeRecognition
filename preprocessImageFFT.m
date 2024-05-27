@@ -1,66 +1,62 @@
 function preprocessedImg = preprocessImageFFT(img, showPlots)
-    % Step 1: Convert the image to grayscale
+    % Convert the image to grayscale if not already
     if size(img, 3) == 3
         img = rgb2gray(img);
     end
 
-    % Step 2: Compute the FFT of the image
-    imgFFT = fft2(double(img));
-    imgFFTShifted = fftshift(imgFFT); % Shift zero frequency to center
-    magnitudeSpectrum = log(1 + abs(imgFFTShifted));
+    % High-pass filter to enhance edges
+    hpfSize = 15;  % Size of the averaging filter
+    h = fspecial('average', hpfSize);
+    lowPassImg = imfilter(double(img), h, 'replicate');
+    highPassImg = double(img) - lowPassImg;
 
+    % Compute the FFT of the high-pass filtered image
+    imgFFT = fft2(highPassImg);
+    imgFFTShifted = fftshift(imgFFT);
+    magnitudeSpectrum = abs(imgFFTShifted);
+
+    % Applying a threshold to focus on significant peaks
+    thresholdLevel = 0.5 * max(magnitudeSpectrum(:));
+    significantPeaks = magnitudeSpectrum > thresholdLevel;
+
+    % Display results if needed
     if showPlots
-        % Plot the original image and the magnitude spectrum
         figure;
-        subplot(2, 2, 1);
+        subplot(2, 3, 1);
         imshow(img, []);
         title('Original Image');
 
-        subplot(2, 2, 2);
-        imshow(magnitudeSpectrum, []);
+        subplot(2, 3, 2);
+        imshow(log(1 + magnitudeSpectrum), []);
         title('Magnitude Spectrum');
+
+        subplot(2, 3, 3);
+        imshow(log(1 + magnitudeSpectrum .* significantPeaks), []);
+        title('Significant Peaks');
     end
 
-    % Step 3: Analyze the magnitude spectrum to find the dominant orientation
-    % Sum the magnitude spectrum along rows and columns
-    sumHorizontal = sum(magnitudeSpectrum, 1);
-    sumVertical = sum(magnitudeSpectrum, 2);
+    % Get coordinates of significant peaks
+    [peakRows, peakCols] = find(significantPeaks);
+    peaks = [peakCols, peakRows]; % Note: x (cols), y (rows) for PCA
 
-    % Find the indices of the maximum values in the summed spectra
-    [~, idxHorizontal] = max(sumHorizontal);
-    [~, idxVertical] = max(sumVertical);
+    % Apply PCA to find the orientation of the line that fits these points
+    if size(peaks, 1) > 1 % Ensure there are enough points for PCA
+        coeff = pca(peaks);
+        principalAngleRadians = atan2(coeff(2, 1), coeff(1, 1));
+        principalAngleDegrees = rad2deg(principalAngleRadians);
+    else
+        principalAngleDegrees = 0; % Default angle if not enough points
+    end
 
-    % Calculate the angle of the dominant frequency component
-    centerX = size(magnitudeSpectrum, 2) / 2;
-    centerY = size(magnitudeSpectrum, 1) / 2;
+    fprintf('Detected angle of the barcode: %f degrees\n', principalAngleDegrees);
 
-    % Calculate the angle in degrees
-    angleX = atan2d(idxVertical - centerY, centerX);
-    angleY = atan2d(centerY, idxHorizontal - centerX);
-
-    % Average the two angles for robustness
-    detectedAngle = mean([angleX, angleY]);
-    fprintf('Detected angle of the barcode: %f degrees\n', detectedAngle);
-
-    % Step 4: Rotate the image to make the barcode horizontal
-    rotatedImg = imrotate(img, -detectedAngle + 90, 'bilinear', 'crop');
+    % Rotate the image to make the barcode horizontal
+    rotatedImg = imrotate(img, principalAngleDegrees, 'bilinear', 'crop');
     preprocessedImg = rotatedImg;
 
     if showPlots
-        % Display the rotated image
-        subplot(2, 2, 3);
+        subplot(2, 3, 4);
         imshow(rotatedImg, []);
-        title(sprintf('Rotated Image (Angle: %f degrees)', detectedAngle));
-
-        % Plot the summed spectra
-        subplot(2, 2, 4);
-        hold on;
-        plot(sumHorizontal);
-        plot(sumVertical);
-        title('Summed Magnitude Spectra');
-        xlabel('Frequency Index');
-        ylabel('Summed Magnitude');
-        legend('Horizontal Sum', 'Vertical Sum');
-        hold off;
+        title(sprintf('Rotated Image (Angle: %f degrees)', principalAngleDegrees));
     end
 end
