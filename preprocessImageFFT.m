@@ -14,6 +14,10 @@ function preprocessedImg = preprocessImageFFT(img, showPlots)
     imgFFT = fft2(highPassImg);
     imgFFTShifted = fftshift(imgFFT);
     magnitudeSpectrum = abs(imgFFTShifted);
+    
+    originalFFT = fft2(double(img));
+    originalFFTShifted = fftshift(originalFFT);
+    originalMagnitudeSpectrum = abs(originalFFTShifted);
 
     % Applying a threshold to focus on significant peaks
     thresholdLevel = 0.5 * max(magnitudeSpectrum(:));
@@ -22,15 +26,27 @@ function preprocessedImg = preprocessImageFFT(img, showPlots)
     % Display results if needed
     if showPlots
         figure;
-        subplot(2, 3, 1);
+        subplot(2, 4, 1);
         imshow(img, []);
         title('Original Image');
 
-        subplot(2, 3, 2);
-        imshow(log(1 + magnitudeSpectrum), []);
-        title('Magnitude Spectrum');
+        subplot(2, 4, 2);
+        imshow(log(1 + originalMagnitudeSpectrum), []);
+        title('Original Magnitude Spectrum');
+        
+        subplot(2, 4, 3);
+        freqz2(h); 
+        title('Filter Frequency Response');
 
-        subplot(2, 3, 3);
+        subplot(2, 4, 4);
+        imshow(highPassImg, []);
+        title('High-Pass Filtered Image');    
+        
+        subplot(2, 4, 5);
+        imshow(log(1 + magnitudeSpectrum), []);
+        title('Filtered Magnitude Spectrum');
+
+        subplot(2, 4, 6);
         imshow(log(1 + magnitudeSpectrum .* significantPeaks), []);
         title('Significant Peaks');
     end
@@ -55,7 +71,7 @@ function preprocessedImg = preprocessImageFFT(img, showPlots)
     preprocessedImg = rotatedImg;
 
     if showPlots
-        subplot(2, 3, 4);
+        subplot(2, 4, 7);
         imshow(rotatedImg, []);
         title(sprintf('Rotated Image (Angle: %f degrees)', principalAngleDegrees));
     end
