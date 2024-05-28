@@ -10,27 +10,36 @@ function preprocessedImg = preprocessImageHugh(img, showPlots)
     peaks = houghpeaks(H, 5);
     lines = houghlines(edges, theta, rho, peaks);
 
+    % Initialize angles array
+    angles = [];
+
+    % Optionally display plots
     if showPlots
         figure;
-        % Subplot 1: Original grayscale image with detected lines
         subplot(1,2,1);
         imshow(img);
         hold on;
         max_len = 0;
-        angles = [];
-        for k = 1:length(lines)
-            xy = [lines(k).point1; lines(k).point2];
+    end
+
+    for k = 1:length(lines)
+        xy = [lines(k).point1; lines(k).point2];
+        lineAngle = atan2d(xy(2,2) - xy(1,2), xy(2,1) - xy(1,1));
+        angles = [angles, lineAngle]; % Collect angles
+
+        if showPlots
             plot(xy(:,1), xy(:,2), 'LineWidth', 2, 'Color', 'green');
             plot(xy(1,1), xy(1,2), 'x', 'LineWidth', 2, 'Color', 'yellow');
             plot(xy(2,1), xy(2,2), 'x', 'LineWidth', 2, 'Color', 'red');
-            lineAngle = atan2d(xy(2,2) - xy(1,2), xy(2,1) - xy(1,1));
-            angles = [angles, lineAngle];
             len = norm(lines(k).point1 - lines(k).point2);
             if (len > max_len)
                 max_len = len;
                 xy_long = xy;
             end
         end
+    end
+
+    if showPlots
         plot(xy_long(:,1), xy_long(:,2), 'LineWidth', 2, 'Color', 'cyan');
         title('Original Image with Detected Lines');
         hold off;
@@ -39,7 +48,7 @@ function preprocessedImg = preprocessImageHugh(img, showPlots)
     % Calculate the most frequent angle
     angleHistogram = histcounts(angles, -90:90);
     [~, maxIdx] = max(angleHistogram);
-    detectedAngle = maxIdx - 1;
+    detectedAngle = maxIdx - 1;  % Correct index for range (-90 to 90)
 
     % Rotate the image to make the barcode horizontal
     rotatedImg = imrotate(img, detectedAngle, 'bilinear', 'crop');
