@@ -112,6 +112,8 @@ else
        preprocessedImg = preprocessImageHugh(croppedImg, showPlots);
    end
    
+   preprocessedImg = detector(preprocessedImg,showPlots);
+
    axes(handles.preprocessedAxes);
    imshow(preprocessedImg);
    handles.preprocessedImage = preprocessedImg;

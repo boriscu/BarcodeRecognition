@@ -2,10 +2,6 @@ function barcodeData = recognizeBarcode(img)
     if(size(img,3) == 3)
         img = rgb2gray(img);
     end
-    img = detector(img);
-    if(size(img,3) == 3)
-        img = rgb2gray(img);
-    end
 
     [~,b] = sort(-sum((1-img')));
     sel = round(mean(b(1:50)));
